@@ -48,14 +48,16 @@ class QualityPortfolioService:
         fs_list_clean = fs_list_clean.groupby(["itemCd", "account"]).tail(1)
         return fs_list_clean
 
-    def _calc_quality(self, fs_list):
+    def get_fs_list_pivot(self):
         """
         ROE: 당기순이익 / 자본
         GPA: 매출총이익 / 자산
         CFO: 영업활동으로인한현금흐름 / 자산
         """
         # 피벗
-        fs_list_pivot = fs_list.pivot(index="itemCd", columns="account", values="ttm")
+        fs_list_pivot = self._get_ttm().pivot(
+            index="itemCd", columns="account", values="ttm"
+        )
         # 수익성 지표 구하기
         fs_list_pivot["ROE"] = fs_list_pivot["당기순이익"] / fs_list_pivot["자본"]
         fs_list_pivot["GPA"] = fs_list_pivot["매출총이익"] / fs_list_pivot["자산"]
@@ -66,8 +68,7 @@ class QualityPortfolioService:
 
     def get_quality_momentum(self, rank=20):
 
-        fs_list = self._get_ttm()
-        fs_list_pivot = self._calc_quality(fs_list)
+        fs_list_pivot = self.get_fs_list_pivot()
 
         # ticker 리스트와 조인
         quality_list = self._tickers[["itemCd", "itemNm"]].merge(
