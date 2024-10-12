@@ -1,0 +1,3 @@
+database_dev: "sqlite:///./app/connection/test.db"
+database_prod: "sqlite:///./app/connection/prod.db"
+envir: "dev" # dev, prod
