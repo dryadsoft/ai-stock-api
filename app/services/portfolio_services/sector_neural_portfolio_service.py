@@ -42,16 +42,20 @@ class SectorNeuralPortfolioService:
         )
         return data_bind
 
-    def get_sector_data(self):
+    def get_sector_data(self, rank=20):
         data_bind = self.set_default()
         # 12개월 수익률 기준 순위 구하기(내림차순)
         data_bind["rank"] = data_bind["return"].rank(axis=0, ascending=False)
-        sector_count = pd.DataFrame(
-            data_bind.loc[data_bind["rank"] <= 20, "secNmKor"].value_counts()
-        )
-        return sector_count
 
-    def get_sector_z_score(self):
+        sector_top_rank = data_bind.loc[data_bind["rank"] <= rank].sort_values(
+            by=["rank"], ascending=True
+        )
+        sector_count = pd.DataFrame(
+            data_bind.loc[data_bind["rank"] <= rank, "secNmKor"].value_counts()
+        )
+        return sector_count, sector_top_rank
+
+    def get_sector_z_score(self, rank=20):
         data_bind = self.set_default()
         # 섹터 중립 포트폴리오
         # 쏠림현상 제거
@@ -65,7 +69,10 @@ class SectorNeuralPortfolioService:
         # z-score로 정규화된 값을 기준으로 랭킹을 구해준다.
         data_bind["z-rank"] = data_bind["z-score"].rank(axis=0, ascending=False)
         # z-score 기준 상위 20개 종목 선택 후 섹터 갯수 구한다.
-        sector_neutral_count = pd.DataFrame(
-            data_bind.loc[data_bind["z-rank"] <= 20, "secNmKor"].value_counts()
+        sector_top_rank = data_bind.loc[data_bind["z-rank"] <= rank].sort_values(
+            by=["z-rank"], ascending=True
         )
-        return sector_neutral_count
+        sector_neutral_count = pd.DataFrame(
+            data_bind.loc[data_bind["z-rank"] <= rank, "secNmKor"].value_counts()
+        )
+        return sector_neutral_count, sector_top_rank
