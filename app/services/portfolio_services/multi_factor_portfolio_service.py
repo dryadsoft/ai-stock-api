@@ -1,3 +1,4 @@
+from enum import Enum
 from pandas import DataFrame
 from sqlalchemy.orm import Session
 from scipy.stats import zscore
@@ -10,6 +11,11 @@ from ...services.portfolio_services.quality_portfolio_service import (
 from ...services.portfolio_services.value_portfolio_service import ValuePortfolio
 from ...services.portfolio_services.momentum_portfolio_service import MomentumPortfolio
 import matplotlib.pyplot as plt
+
+
+class OutlierMethod(Enum):
+    TRIM = "trim"
+    WINSER = "winser"
 
 
 class MultiFactorPortfolioService:
@@ -83,12 +89,12 @@ class MultiFactorPortfolioService:
         )
         self._data_bind_group = data_bind_group
 
-    def get_sector_quality_zscore(self):
+    def get_sector_quality_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """퀄리티(섹터 중립화된 수익성 순위의 Z-Score)"""
 
         z_quality = (
             self._data_bind_group[["ROE", "GPA", "CFO"]]
-            .apply(lambda x: self.col_clean(x, 0.01, False))
+            .apply(lambda x: self.col_clean(x, 0.01, False, method))
             .sum(axis=1, skipna=False)
             .to_frame("z_quality")
         )
@@ -97,15 +103,15 @@ class MultiFactorPortfolioService:
             z_quality, how="left", on=["itemCd", "secNmKor"]
         )
 
-    def get_sector_value_zscore(self):
+    def get_sector_value_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """벨류 z-score"""
         # PBR, PCR,PER,PSR은 오름차순
         value_1 = self._data_bind_group[["PBR", "PCR", "PER", "PSR"]].apply(
-            lambda x: self.col_clean(x, 0.01, True)
+            lambda x: self.col_clean(x, 0.01, True, method)
         )
         # DY는 내림차순
         value_2 = self._data_bind_group[["DY"]].apply(
-            lambda x: self.col_clean(x, 0.01, False)
+            lambda x: self.col_clean(x, 0.01, False, method)
         )
 
         z_value = (
@@ -117,11 +123,11 @@ class MultiFactorPortfolioService:
             z_value, how="left", on=["itemCd", "secNmKor"]
         )
 
-    def get_sector_momentum_zscore(self):
+    def get_sector_momentum_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """모멘텀 z-score"""
         z_momentum = (
             self._data_bind_group[["12M", "k_ratio"]]
-            .apply(lambda x: self.col_clean(x, 0.01, False))
+            .apply(lambda x: self.col_clean(x, 0.01, False, method))
             .sum(axis=1, skipna=False)
             .to_frame("z_momentum")
         )
@@ -129,16 +135,16 @@ class MultiFactorPortfolioService:
             z_momentum, how="left", on=["itemCd", "secNmKor"]
         )
 
-    def get_sector_neutral_zscore(self):
+    def get_sector_neutral_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """섹터 중립화된 수익성 순위의 Z-Score"""
         self.get_group_data()
-        self.get_sector_quality_zscore()  # 퀄리티
-        self.get_sector_value_zscore()  # 밸류
-        self.get_sector_momentum_zscore()  # 모멘텀
+        self.get_sector_quality_zscore(method)  # 퀄리티
+        self.get_sector_value_zscore(method)  # 밸류
+        self.get_sector_momentum_zscore(method)  # 모멘텀
 
-    def get_zscore_reblance(self):
+    def get_zscore_reblance(self, method: OutlierMethod = OutlierMethod.TRIM):
 
-        self.get_sector_neutral_zscore()
+        self.get_sector_neutral_zscore(method)
         # 다시 z-score를 계산하여 분포를 비슷하게 맞춰준다.
         # 분포를 완벽하게 맞추기위해 z-score를 몇번을 돌리기도 하는데 그럴필요는 없음
         data_bind_final = (
@@ -149,8 +155,8 @@ class MultiFactorPortfolioService:
         data_bind_final.columns = ["quality", "value", "momentum"]
         self._data_bind_final = data_bind_final
 
-    def get_final_portfolio(self):
-        self.get_zscore_reblance()
+    def get_final_portfolio(self, method: OutlierMethod = OutlierMethod.TRIM):
+        self.get_zscore_reblance(method)
         wts = [0.3, 0.3, 0.3]  # 동일비중
         # 비중 곱해서 해응로 더하기
         data_bind_final_sum = (
@@ -163,15 +169,36 @@ class MultiFactorPortfolioService:
         port_qvm["invest"] = np.where(port_qvm["qvm"].rank() <= 20, "Y", "N")
         return port_qvm
 
-    def col_clean(sefl, df, cutoff=0.01, asc=False):
+    def col_clean(
+        self,
+        df,
+        cutoff=0.01,
+        ascending=False,
+        method: OutlierMethod = OutlierMethod.TRIM,
+    ):
         """데이터 클린징"""
-
+        # q_low, q_high는 벡터로 되어있음
         q_low = df.quantile(cutoff)
-        q_hi = df.quantile(1 - cutoff)
+        q_high = df.quantile(1 - cutoff)
 
-        df_trim = df[(df > q_low) & (df < q_hi)]
+        if method == OutlierMethod.TRIM:
+            # 트림: 이상치 제거
+            df_cleaned = df[(df > q_low) & (df < q_high)]
+        else:
+            # 윈저라이징: 이상치 데이터를 경계값으로 대체
+            df_cleaned = df.copy()  # 원본을 유지하기 위해 복사본 사용
+            # q_low와 q_high는 각 열의 quantile 값을 반환하므로 apply를 사용하여 열별로 처리
+            df_cleaned = df_cleaned.apply(
+                lambda col: np.where(col < q_low[col.name], q_low[col.name], col),
+                axis=0,
+            )
+            df_cleaned = df_cleaned.apply(
+                lambda col: np.where(col > q_high[col.name], q_high[col.name], col),
+                axis=0,
+            )
 
-        df_z_score = df_trim.rank(axis=0, ascending=asc).apply(
+        # Z-Score 계산
+        df_z_score = df_cleaned.rank(axis=0, ascending=ascending).apply(
             zscore, nan_policy="omit"
         )
 
