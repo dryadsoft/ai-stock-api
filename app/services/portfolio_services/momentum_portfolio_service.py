@@ -74,7 +74,6 @@ class MomentumPortfolio:
 
     def get_momentum_rank(self, type="k_ratio", rank=20):
         "랭킹 구하기"
-
         tickers = self.kor_ticker_service.get_tickers(isDf=True)
         data_bind: pd.DataFrame = None
         if type == "k_ratio":
@@ -85,6 +84,10 @@ class MomentumPortfolio:
             )
             # rank 구하기
             result_rank = data_bind["k_ratio"].rank(axis=0, ascending=False)
+            # rank 순위 이내까지만 필터링
+            result = data_bind[result_rank <= rank].sort_values(
+                by=["k_ratio"], ascending=False
+            )
         else:
             base_data = self.get_simple_momentum()
             # 티커리스트와 join
@@ -93,9 +96,10 @@ class MomentumPortfolio:
             )
             # rank 구하기
             result_rank = data_bind["12M"].rank(axis=0, ascending=False)
-
-        # rank 순위 이내까지만 필터링
-        result = data_bind[result_rank <= rank]
+            # rank 순위 이내까지만 필터링
+            result = data_bind[result_rank <= rank].sort_values(
+                by=["12M"], ascending=False
+            )
         return result
 
     def paint_graph(self, momentum):
