@@ -155,7 +155,7 @@ class MultiFactorPortfolioService:
         data_bind_final.columns = ["quality", "value", "momentum"]
         self._data_bind_final = data_bind_final
 
-    def get_final_portfolio(self, method: OutlierMethod = OutlierMethod.TRIM):
+    def get_final_portfolio(self, method: OutlierMethod = OutlierMethod.TRIM, rank=20):
         self.get_zscore_reblance(method)
         wts = [0.3, 0.3, 0.3]  # 동일비중
         # 비중 곱해서 해응로 더하기
@@ -166,8 +166,14 @@ class MultiFactorPortfolioService:
         data_bind_final_sum.columns = ["qvm"]
         port_qvm = self._data_bind.merge(data_bind_final_sum, on="itemCd")
         # 20위 이내는 Y 아니면 N
-        port_qvm["invest"] = np.where(port_qvm["qvm"].rank() <= 20, "Y", "N")
+        port_qvm["invest"] = np.where(port_qvm["qvm"].rank() <= rank, "Y", "N")
         return port_qvm
+
+    def get_final_rank(self, method: OutlierMethod = OutlierMethod.TRIM, rank=20):
+        port_qvm = self.get_final_portfolio(method, rank)
+        port_qvm = port_qvm[port_qvm["invest"] == "Y"]
+        port_qvm["rank"] = port_qvm["qvm"].rank()
+        return port_qvm.sort_values(by="rank", ascending=True)
 
     def col_clean(
         self,
