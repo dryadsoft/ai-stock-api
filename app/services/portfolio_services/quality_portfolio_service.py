@@ -80,10 +80,13 @@ class QualityPortfolioService:
         quality_rank = quality_list_copy.rank(ascending=False, axis=0)
         # 지표들의 랭킹의합을 다시 랭킹
         quality_sum = quality_rank.sum(axis=1, skipna=False).rank()
+        quality_list["rank"] = quality_sum
         # 20위 이내 구하기
-        quality = quality_list.loc[
-            quality_sum <= rank, ["itemCd", "itemNm", "ROE", "GPA", "CFO"]
-        ].round(4)
+        quality = (
+            quality_list.sort_values(by=["rank"], ascending=True)
+            .loc[quality_sum <= rank, ["itemCd", "itemNm", "ROE", "GPA", "CFO"]]
+            .round(4)
+        )
         return quality
 
     # def paint_graph(self, momentum):
