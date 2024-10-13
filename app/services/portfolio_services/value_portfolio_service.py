@@ -1,12 +1,11 @@
 from sqlalchemy.orm import Session
 import numpy as np
 
-# import matplotlib.pyplot as plt
-# import seaborn as sns
+import matplotlib.pyplot as plt
+import seaborn as sns
 from ...services.kor_ticker_service import KorTickerService
 from ...services.kor_value_service import KorValueService
-
-# from ...services.kor_price_service import KorPriceService
+from ...services.kor_price_service import KorPriceService
 
 
 class ValuePortfolio:
@@ -17,6 +16,7 @@ class ValuePortfolio:
     def __init__(self, session: Session):
         self.kor_ticker_service = KorTickerService(session)
         self.kor_value_service = KorValueService(session)
+        self.kor_price_service = KorPriceService(session)
 
     def get_value_pivot(self):
 
@@ -60,27 +60,33 @@ class ValuePortfolio:
         value_list_copy = value_list_copy[["PER", "PBR", "PCR", "PSR", "DY"]]
         value_rank_all = value_list_copy.rank(axis=0)
         value_sum_all = value_rank_all.sum(axis=1, skipna=False).rank()
-        value = _data_bind.loc[value_sum_all <= rank]
+        _data_bind["rank"] = value_sum_all
+        value = _data_bind.loc[value_sum_all <= rank].sort_values(
+            by=["rank"], ascending=True
+        )
         return value
 
-    # def paint_graph(self, momentum):
-    #     """그래프 그리기"""
-    #     data_bind = tickers[["itemCd", "itemNm"]].merge(
-    #         momentum, how="inner", on="itemCd"
-    #     )
-    #     # 1년치 가격정보 필터링
-    #     momentum = self._prices[self._prices["itemCd"].isin(data_bind["itemCd"])]
-    #     # 그래프
-    #     plt.rc("font", family="AppleGothic")
-    #     g = sns.relplot(
-    #         data=momentum,
-    #         x="baseDt",
-    #         y="closePrice",
-    #         col="itemCd",
-    #         col_wrap=5,
-    #         kind="line",
-    #         facet_kws={
-    #             "sharey": False,
-    #             "sharex": True,
-    #         },
-    #     )
+    def paint_graph(self, momentum):
+        """그래프 그리기"""
+        tickers = self.kor_ticker_service.get_tickers(isDf=True)
+        prices = self.kor_price_service.get_year_price(is_df=True)
+
+        data_bind = tickers[["itemCd", "itemNm"]].merge(
+            momentum, how="inner", on="itemCd"
+        )
+        # 1년치 가격정보 필터링
+        momentum = prices[prices["itemCd"].isin(data_bind["itemCd"])]
+        # 그래프
+        plt.rc("font", family="AppleGothic")
+        g = sns.relplot(
+            data=momentum,
+            x="baseDt",
+            y="closePrice",
+            col="itemCd",
+            col_wrap=5,
+            kind="line",
+            facet_kws={
+                "sharey": False,
+                "sharex": True,
+            },
+        )
