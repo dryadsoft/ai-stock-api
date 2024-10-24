@@ -135,6 +135,18 @@ class KorPriceService:
 
         return pd.read_sql(query_set.statement, query_set.session.bind)
 
+    def get_ticker_price_all(self, ticker, is_df=False):
+        """
+        ticker의 모든 데이터 조회
+        """
+        query_set = self.session.query(KorPriceEntity).filter(
+            KorPriceEntity.itemCd == ticker,
+        )
+        if is_df != True:
+            return query_set.all()
+
+        return pd.read_sql(query_set.statement, query_set.session.bind)
+
     def _close(self):
         self.session.commit()
         self.session.close()
