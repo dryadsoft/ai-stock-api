@@ -3,6 +3,7 @@ import pandas as pd
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+from ..services.biz_day_service import BizDayService
 from ..entities.kor_value_entity import KorValueEntity
 from ..services.kor_fs_service import KorFsService
 from ..services.kor_ticker_service import KorTickerService
@@ -13,6 +14,8 @@ class KorValueService:
         self.session: Session = session
         self.kor_fs_service = KorFsService(session)
         self.kor_ticker_service = KorTickerService(session)
+        biz_day_service = BizDayService()
+        self.biz_day = biz_day_service.get_biz_day()
 
     def get_ttm(self):
         """PSR, PCR, PBR 구하기"""
@@ -87,26 +90,36 @@ class KorValueService:
         kor_value_entity = KorValueEntity(**data)
         self.session.add(kor_value_entity)
 
+    def _is_exists(self):
+        """biz_day의 ticker 데이터가 존재하는지 확인"""
+        max_dt = self.session.query(func.max(KorValueEntity.baseDt)).scalar()
+        if self.biz_day == max_dt:
+            return True
+        return False
+
     def insert_data(self):
-        ttm = self.get_ttm()
-        for ttm_item in ttm.values:
-            trans_data = {
-                "itemCd": ttm_item[0],
-                "baseDt": ttm_item[1],
-                "metrics": ttm_item[2],
-                "amt": ttm_item[3],
-            }
-            self.insert(trans_data)
-        dvdn = self.get_dvdn()
-        for item in dvdn.values:
-            trans_data = {
-                "itemCd": item[0],
-                "baseDt": item[1],
-                "metrics": item[2],
-                "amt": item[3],
-            }
-            self.insert(trans_data)
-        self.close()
+        if self._is_exists() == True:
+            print(f"{self.biz_day}의 value 데이터가 이미 존재합니다.")
+        else:
+            ttm = self.get_ttm()
+            for ttm_item in ttm.values:
+                trans_data = {
+                    "itemCd": ttm_item[0],
+                    "baseDt": ttm_item[1],
+                    "metrics": ttm_item[2],
+                    "amt": ttm_item[3],
+                }
+                self.insert(trans_data)
+            dvdn = self.get_dvdn()
+            for item in dvdn.values:
+                trans_data = {
+                    "itemCd": item[0],
+                    "baseDt": item[1],
+                    "metrics": item[2],
+                    "amt": item[3],
+                }
+                self.insert(trans_data)
+            self.close()
 
     def get_values(self, isDf=False):
         """

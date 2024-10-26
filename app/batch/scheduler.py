@@ -19,9 +19,11 @@ scheduler.add_job(KorSectorTask().start, trigger=sector_task_trigger)
 price_task_trigger = CronTrigger(hour=1, minute=0)
 scheduler.add_job(KorPriceTask().start, trigger=price_task_trigger)
 
+# insert or update 로 바꿔야함
 fs_task_trigger = CronTrigger(hour=1, minute=0)
 scheduler.add_job(KorFsTask().start, trigger=fs_task_trigger)
 
+# 네이버 날짜가 새벽5시에 전날기준으로 가져오는지 확인필요함
 value_task_trigger = CronTrigger(hour=5, minute=0)
 scheduler.add_job(KorValueTask().start, trigger=value_task_trigger)
 

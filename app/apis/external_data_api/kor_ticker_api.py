@@ -3,17 +3,14 @@ import requests as rq
 from io import BytesIO
 import pandas as pd
 
-from ...services.biz_day_service import BizDayService
-
 
 class KorTickerApi:
     gen_otp_url = "http://data.krx.co.kr/comm/fileDn/GenerateOTP/generate.cmd"
     down_url = "http://data.krx.co.kr/comm/fileDn/download_csv/download.cmd"
     biz_day = None
 
-    def __init__(self):
-        biz_day_service = BizDayService()
-        self.biz_day = biz_day_service.get_biz_day()
+    def __init__(self, biz_day):
+        self.biz_day = biz_day
 
     def _get_headers(self):
         return {

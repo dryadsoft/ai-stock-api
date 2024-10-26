@@ -12,7 +12,7 @@ class KorFsApi:
         url = (
             f"https://comp.fnguide.com/SVO2/ASP/SVD_finance.asp?pGB=1&gicode=A{ticker}"
         )
-        data = pd.read_html(url, displayed_only=True)
+        data = pd.read_html(url, displayed_only=False)
         # print(data[0].columns.to_list())  # 연간기준 포괄손익계산서
         # print(data[2].columns.to_list())  # 연간기준 재무제표
         # print(data[4].columns.to_list())  # 연간기준 현금흐름표

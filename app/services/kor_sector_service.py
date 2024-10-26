@@ -25,18 +25,28 @@ class KorSectorService:
         kor_sector_entity = KorSectorEntity(**data)
         self.session.add(kor_sector_entity)
 
+    def _is_exists(self):
+        """biz_day의 sector 데이터가 존재하는지 확인"""
+        max_dt = self.session.query(func.max(KorSectorEntity.baseDt)).scalar()
+        if self.biz_day == max_dt:
+            return True
+        return False
+
     def insert_data(self):
-        datas = self._fetch_api_data()
-        for item in datas.values:
-            trans_data = {
-                "baseDt": item[4],
-                "cmpCd": item[1],
-                "cmpKor": item[2],
-                "secNmKor": item[3],
-                "idxCd": item[0],
-            }
-            self._insert(trans_data)
-        self._close()
+        if self._is_exists() == True:
+            print(f"{self.biz_day}의 sector 데이터가 이미 존재합니다.")
+        else:
+            datas = self._fetch_api_data()
+            for item in datas.values:
+                trans_data = {
+                    "baseDt": item[4],
+                    "cmpCd": item[1],
+                    "cmpKor": item[2],
+                    "secNmKor": item[3],
+                    "idxCd": item[0],
+                }
+                self._insert(trans_data)
+            self._close()
 
     def get_sectors(self, is_df=False):
         max_subquery = self.session.query(func.max(KorSectorEntity.baseDt))

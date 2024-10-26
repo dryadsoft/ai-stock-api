@@ -72,9 +72,9 @@ class MagicPortfolioService:
         data_bind["mrktTotAmt"] = data_bind["mrktTotAmt"] / 100000000
 
         # 이자비용, 현금및현금성자산, 감가상각비 데이터가 없어서 임시로 0으로 만들어준다.
-        data_bind["이자비용"] = 0
-        data_bind["현금및현금성자산"] = 0
-        data_bind["감가상각비"] = 0
+        # data_bind["이자비용"] = 0
+        # data_bind["현금및현금성자산"] = 0
+        # data_bind["감가상각비"] = 0
 
         # 분자(EBIT)
         magic_ebit = (
