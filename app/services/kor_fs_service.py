@@ -24,7 +24,8 @@ class KorFsService:
 
     def _insert(self, data):
         kor_fs_entity = KorFsEntity(**data)
-        self.session.add(kor_fs_entity)
+        self.session.merge(kor_fs_entity)
+        # self.session.add(kor_fs_entity)
 
     def insert_data(self):
         tickers = self.kor_ticker_service.get_tickers()
