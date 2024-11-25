@@ -1,5 +1,20 @@
 # AI_STOCK_ANALYSIS
 
+```env
+# ai-stock-api/.env
+DART_NAVER_API_KEY=
+DART_GOOGLE_API_KEY=
+ALPHA_VANTAGE_API_KEY=
+PUBLIC_DATA_API_KEY=
+```
+
+```yaml
+#  ai-stock-api/app/config.yaml
+database_dev: "sqlite:///./app/connection/test.db"
+database_prod: "sqlite:///./app/connection/prod.db"
+envir: "dev" # dev, prod
+```
+
 ```note
 /corpcode/all
 /corpcode/name/{name}
