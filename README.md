@@ -34,7 +34,10 @@ python3 -m uvicorn krx_api.main:app --reload --host=0.0.0.0 --port=4000
 
 python3 -m uvicorn app.main:app --reload --host=0.0.0.0 --port=4001
 
-nohup python3 -m uvicorn app.main:app --reload --host=0.0.0.0 --port=4001 > /home/ubuntu/logs/ai_stock_api.log 2>&1 &
+nohup python3 -m uvicorn app.main:app --reload --host=0.0.0.0 --port=4003 > /home/ubuntu/logs/ai_stock_api.log 2>&1 &
+
+# test-api 실행했던 명령어
+gunicorn -k uvicorn.workers.UvicornWorker --access-logfile ./gunicorn-access.log main:app --bind 0.0.0.0:4000 --workers 2 --daemon
 ```
 
 ## fastapi doc 접속경로

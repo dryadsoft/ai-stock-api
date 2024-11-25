@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import List
 from pandas import DataFrame
 from sqlalchemy.orm import Session
 from scipy.stats import zscore
@@ -43,6 +44,16 @@ class MultiFactorPortfolioService:
         self._data_bind_group: DataFrameGroupBy[Scalar] = None  # type: ignore
         self._data_bind_final: DataFrame = None
 
+    def set_facts(
+        self,
+        value_facts: List[str] = [],
+        quality_facts: List[str] = [],
+        momentum_facts: List[str] = [],
+    ):
+        self._value_facts = value_facts
+        self._quality_facts = quality_facts
+        self._momentum_facts = momentum_facts
+
     def get_data(self):
         # 퀄리티
         self._fs_list_pivot = self._quality_protfolio_service.get_fs_list_pivot()
@@ -71,11 +82,16 @@ class MultiFactorPortfolioService:
                 left_on="itemCd",
                 right_on="cmpCd",
             )
-            .merge(self._fs_list_pivot[["ROE", "GPA", "CFO"]], how="left", on="itemCd")
-            .merge(self._value_pivot, how="left", on="itemCd")
-            .merge(self._ret_list, how="left", on="itemCd")
-            .merge(self._k_ratio_bind, how="left", on="itemCd")
+            .merge(self._fs_list_pivot[self._quality_facts], how="left", on="itemCd")
+            .merge(self._value_pivot[self._value_facts], how="left", on="itemCd")
+            # .merge(self._ret_list, how="left", on="itemCd")
+            # .merge(self._k_ratio_bind, how="left", on="itemCd")
         )
+        if self._momentum_facts.__contains__("12M"):
+            data_bind = data_bind.merge(self._ret_list, how="left", on="itemCd")
+
+        if self._momentum_facts.__contains__("k_ratio"):
+            data_bind = data_bind.merge(self._k_ratio_bind, how="left", on="itemCd")
 
         data_bind.loc[data_bind["secNmKor"].isnull(), "secNmKor"] = "기타"
         data_bind = data_bind.drop(["cmpCd"], axis=1)
@@ -93,7 +109,7 @@ class MultiFactorPortfolioService:
         """퀄리티(섹터 중립화된 수익성 순위의 Z-Score)"""
 
         z_quality = (
-            self._data_bind_group[["ROE", "GPA", "CFO"]]
+            self._data_bind_group[self._quality_facts]
             .apply(lambda x: self.col_clean(x, 0.01, False, method))
             .sum(axis=1, skipna=False)
             .to_frame("z_quality")
@@ -105,20 +121,28 @@ class MultiFactorPortfolioService:
 
     def get_sector_value_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """벨류 z-score"""
+        is_exists_dy = self._value_facts.__contains__("DY")
+
+        if is_exists_dy:
+            self._value_facts.remove("DY")
+
         # PBR, PCR,PER,PSR은 오름차순
-        value_1 = self._data_bind_group[["PBR", "PCR", "PER", "PSR"]].apply(
+        value_1 = self._data_bind_group[self._value_facts].apply(
             lambda x: self.col_clean(x, 0.01, True, method)
         )
-        # DY는 내림차순
-        value_2 = self._data_bind_group[["DY"]].apply(
-            lambda x: self.col_clean(x, 0.01, False, method)
-        )
+        if is_exists_dy:
+            # DY는 내림차순
+            value_2 = self._data_bind_group[["DY"]].apply(
+                lambda x: self.col_clean(x, 0.01, False, method)
+            )
+            z_value = (
+                value_1.merge(value_2, on=["itemCd", "secNmKor"])
+                .sum(axis=1, skipna=False)
+                .to_frame("z_value")
+            )
+        else:
+            z_value = value_1.sum(axis=1, skipna=False).to_frame("z_value")
 
-        z_value = (
-            value_1.merge(value_2, on=["itemCd", "secNmKor"])
-            .sum(axis=1, skipna=False)
-            .to_frame("z_value")
-        )
         self._data_bind = self._data_bind.merge(
             z_value, how="left", on=["itemCd", "secNmKor"]
         )
@@ -126,7 +150,7 @@ class MultiFactorPortfolioService:
     def get_sector_momentum_zscore(self, method: OutlierMethod = OutlierMethod.TRIM):
         """모멘텀 z-score"""
         z_momentum = (
-            self._data_bind_group[["12M", "k_ratio"]]
+            self._data_bind_group[self._momentum_facts]
             .apply(lambda x: self.col_clean(x, 0.01, False, method))
             .sum(axis=1, skipna=False)
             .to_frame("z_momentum")
@@ -219,6 +243,7 @@ class MultiFactorPortfolioService:
         # 분포 시각화
         data_z = data_bind.copy()
 
+        plt.rc("font", family="AppleGothic")
         plt.rc("axes", unicode_minus=False)
         fig, axes = plt.subplots(3, 1, figsize=(10, 6), sharex=True, sharey=True)
         for n, ax in enumerate(axes.flatten()):
