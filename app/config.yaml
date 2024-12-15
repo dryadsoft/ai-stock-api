@@ -1,3 +1,15 @@
-database_dev: "sqlite:///./app/connection/test.db"
-database_prod: "sqlite:///./app/connection/prod.db"
-envir: "dev" # dev, prod
+is_prod_server: False # 개발, 운영여부
+server_dev:
+  database: "sqlite:///./app/connection/test.db"
+server_prod:
+  database: "sqlite:///./app/connection/prod.db"
+
+is_prod_hantu: False # 한국투자증권 모의투자, 실전투자
+hantu_dev:
+  cano: "50122474" # 계좌번호 체계(8-2)의 앞 8자리
+  acnt_prdt_cd: "01" # 계좌번호 체계(8-2)의 뒤 2자리
+  api_base_url: "https://openapivts.koreainvestment.com:29443"
+hantu_prod:
+  cano: ""
+  acnt_prdt_cd: ""
+  api_base_url: "https://openapi.koreainvestment.com:9443"
