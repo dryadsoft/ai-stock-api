@@ -1,4 +1,5 @@
 from datetime import datetime
+import os
 import requests as rq
 from app.services.hantu_services.domain import Domain
 
@@ -6,8 +7,8 @@ from app.services.hantu_services.domain import Domain
 class AuthService:
     def __init__(self):
         self.BASE_URL = Domain.get_url()
-        self.APP_KEY = Domain.get_app_key()
-        self.SECRET_KEY = Domain.get_secret_key()
+        self.APP_KEY = os.environ.get("HAN_TU_APP_KEY")
+        self.SECRET_KEY = os.environ.get("HAN_TU_SECRET_KEY")
         self.access_token_obj = None
 
     def get_approval_key(self):
@@ -74,7 +75,7 @@ class AuthService:
                 self.access_token_obj = None
         return access_token
 
-    def get_access_token(self):
+    def get_access_token(self) -> str:
         """access token 발급"""
         access_token = self._valid_access_token()
         if access_token != "":
