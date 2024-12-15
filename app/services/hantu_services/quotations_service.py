@@ -1,16 +1,16 @@
+import os
 import requests as rq
-from app.services.hantu_services.auth_service import AuthService
 from app.services.hantu_services.domain import Domain
 
 
 class QuotationsService:
     """국내주식 기본시세"""
 
-    def __init__(self):
-        self.BASE_URL = Domain.get_url()
-        self.APP_KEY = Domain.get_app_key()
-        self.SECRET_KEY = Domain.get_secret_key()
-        self.access_token = AuthService().get_access_token()
+    def __init__(self, access_token: str):
+        self._APP_KEY = os.environ.get("HAN_TU_APP_KEY")
+        self._SECRET_KEY = os.environ.get("HAN_TU_SECRET_KEY")
+        self._BASE_URL = Domain.get_url()
+        self._ACCESS_TOKEN = access_token
 
     def inquire_price(self, ticker: str):
         """주식현재가 시세
@@ -19,9 +19,9 @@ class QuotationsService:
         """
         headers = {
             "content-type": "application/json; utf-8",
-            "authorization": f"Bearer {self.access_token}",
-            "appkey": self.APP_KEY,
-            "appsecret": self.SECRET_KEY,
+            "authorization": f"Bearer {self._ACCESS_TOKEN}",
+            "appkey": self._APP_KEY,
+            "appsecret": self._SECRET_KEY,
             "tr_id": "FHKST01010100",  # 주식현재가 시세
             "tr_cont": "",
             "custtype": "P",  # 개인
@@ -32,7 +32,7 @@ class QuotationsService:
             "FID_INPUT_ISCD": ticker,
         }
         response = rq.get(
-            f"{self.BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
+            f"{self._BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-price",
             headers=headers,
             params=params,
         )
@@ -57,9 +57,9 @@ class QuotationsService:
         """
         headers = {
             "content-type": "application/json; utf-8",
-            "authorization": f"Bearer {self.access_token}",
-            "appkey": self.APP_KEY,
-            "appsecret": self.SECRET_KEY,
+            "authorization": f"Bearer {self._ACCESS_TOKEN}",
+            "appkey": self._APP_KEY,
+            "appsecret": self._SECRET_KEY,
             "tr_id": "FHKST01010400",  # 주식현재가 일자별
             "tr_cont": "",
             "custtype": "P",  # 개인
@@ -72,7 +72,7 @@ class QuotationsService:
             "FID_ORG_ADJ_PRC": "0",  # FID 수정주가 원주가 가격, 0: 수정주가반영, 1 : 수정주가미반영
         }
         response = rq.get(
-            f"{self.BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-price",
+            f"{self._BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-price",
             headers=headers,
             params=params,
         )
@@ -97,9 +97,9 @@ class QuotationsService:
         """
         headers = {
             "content-type": "application/json; utf-8",
-            "authorization": f"Bearer {self.access_token}",
-            "appkey": self.APP_KEY,
-            "appsecret": self.SECRET_KEY,
+            "authorization": f"Bearer {self._ACCESS_TOKEN}",
+            "appkey": self._APP_KEY,
+            "appsecret": self._SECRET_KEY,
             "tr_id": "FHKST03010100",
             "custtype": "P",  # 개인
         }
@@ -112,7 +112,7 @@ class QuotationsService:
             "FID_ORG_ADJ_PRC": "0",  # 0:수정주가 1:원주가
         }
         response = rq.get(
-            f"{self.BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
+            f"{self._BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice",
             headers=headers,
             params=params,
         )
