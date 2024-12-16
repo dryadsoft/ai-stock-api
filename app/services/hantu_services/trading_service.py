@@ -153,13 +153,13 @@ class TradingService:
                 f"주식일별주문체결조회 실패하였습니다.[{response.status_code}]\n error_message: {response.text}"
             )
         else:
-            response = response.json()
-            if response["rt_cd"] != "0":
+            response_json = response.json()
+            if response_json["rt_cd"] != "0":
                 raise Exception(
-                    f"주식일별주문체결조회 실패하였습니다.[rt_cd: {response["rt_cd"]}]\n error_message: [{response["msg_cd"]}] {response["msg1"]}"
+                    f"주식일별주문체결조회 실패하였습니다.[rt_cd: {response_json["rt_cd"]}]\n error_message: [{response_json["msg_cd"]}] {response_json["msg1"]}"
                 )
-            print(f"[{response["msg_cd"]}] {response["msg1"]}")
-            return response["output1"]
+            print(f"[{response_json["msg_cd"]}] {response_json["msg1"]}")
+            return response_json["output1"]
 
     def order_rvsecncl(self, orgn_odno: str):
         """주식주문(정정취소)[v1_국내주식-003]
@@ -206,5 +206,6 @@ class TradingService:
                 f"주식주문(정정취소)에 실패하였습니다.[{response.status_code}]\n error_message: {response.text}"
             )
         else:
-            print(response)
-            return response.json()
+            response_json = response.json()
+            print(response_json)
+            return response_json
