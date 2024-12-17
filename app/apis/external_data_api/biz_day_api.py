@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 import requests as rq
 from bs4 import BeautifulSoup
 import re
@@ -17,5 +18,13 @@ class BizDayApi:
         parse_day = data_html.select_one(
             "#wrap > #newarea> #contentarea > #contentarea_left > .group_heading > .ly_realtime > span#time"
         ).text
-        biz_day = re.findall("[0-9]+", parse_day)[0:3]
-        return "".join(biz_day)
+        
+        if "장중" in parse_day:
+            biz_day = re.findall("[0-9]+", parse_day)[0:3]
+            biz_day = "".join(biz_day)
+            biz_day = datetime.strptime(biz_day, "%Y%m%d") + timedelta(days=-1)
+            biz_day = biz_day.strftime("%Y%m%d")
+        else:
+            biz_day = re.findall("[0-9]+", parse_day)
+            biz_day = "".join(biz_day)
+        return biz_day
