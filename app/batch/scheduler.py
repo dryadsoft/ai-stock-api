@@ -11,20 +11,20 @@ from ..batch.tasks.kor_ticker_task import KorTickerTask
 scheduler = BackgroundScheduler()
 
 ticker_task_trigger = CronTrigger(hour=23, minute=0)
-scheduler.add_job(KorTickerTask().start, trigger=ticker_task_trigger)
+scheduler.add_job(KorTickerTask().start, trigger=ticker_task_trigger, misfire_grace_time=10)
 
 sector_task_trigger = CronTrigger(hour=23, minute=0)
-scheduler.add_job(KorSectorTask().start, trigger=sector_task_trigger)
+scheduler.add_job(KorSectorTask().start, trigger=sector_task_trigger, misfire_grace_time=10)
 
 price_task_trigger = CronTrigger(hour=1, minute=0)
-scheduler.add_job(KorPriceTask().start, trigger=price_task_trigger)
+scheduler.add_job(KorPriceTask().start, trigger=price_task_trigger, misfire_grace_time=10)
 
 # insert or update 로 바꿔야함
 fs_task_trigger = CronTrigger(month="1-12", day=1, hour=1, minute=0)
-scheduler.add_job(KorFsTask().start, trigger=fs_task_trigger)
+scheduler.add_job(KorFsTask().start, trigger=fs_task_trigger, misfire_grace_time=10)
 
 # 네이버 날짜가 새벽5시에 전날기준으로 가져오는지 확인필요함
 value_task_trigger = CronTrigger(hour=5, minute=0)
-scheduler.add_job(KorValueTask().start, trigger=value_task_trigger)
+scheduler.add_job(KorValueTask().start, trigger=value_task_trigger, misfire_grace_time=10)
 
 # scheduler.add_job(KorPriceTask().start, "interval", seconds=5)
