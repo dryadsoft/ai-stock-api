@@ -17,5 +17,5 @@ class BizDayApi:
         parse_day = data_html.select_one(
             "#wrap > #newarea> #contentarea > #contentarea_left > .group_heading > .ly_realtime > span#time"
         ).text
-        biz_day = re.findall("[0-9]+", parse_day)
+        biz_day = re.findall("[0-9]+", parse_day)[0:3]
         return "".join(biz_day)
