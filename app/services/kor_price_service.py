@@ -90,23 +90,23 @@ class KorPriceService:
         for err in err_list:
             print(err)
 
-    def get_prev_date(self):
+    def get_prev_date(self, years=1):
         end_date = self.session.query(func.max(KorPriceEntity.baseDt)).scalar()
         # 문자열을 datetime 객체로 변환
         date_obj = datetime.strptime(end_date, "%Y%m%d")
 
         # 1년(365일)을 뺀 날짜 계산
-        new_date = date_obj - relativedelta(years=1)
+        new_date = date_obj - relativedelta(years=years)
 
         # 새로운 날짜를 다시 문자열로 변환
         from_date = new_date.strftime("%Y%m%d")
         return from_date, end_date
 
-    def get_year_price(self, is_df=False):
+    def get_year_price(self, is_df=False, years=1):
         """
         1년치 데이터 조회
         """
-        from_date, end_date = self.get_prev_date()
+        from_date, end_date = self.get_prev_date(years)
         query_set = self.session.query(
             KorPriceEntity.baseDt,
             KorPriceEntity.closePrice,
